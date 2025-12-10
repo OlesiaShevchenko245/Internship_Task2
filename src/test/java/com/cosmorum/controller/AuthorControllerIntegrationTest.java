@@ -2,11 +2,14 @@ package com.cosmorum.controller;
 
 import com.cosmorum.dto.AuthorDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +27,9 @@ class AuthorControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     private AuthorDTO createTestAuthor(String firstName, String lastName, String nationality) throws Exception {
         AuthorDTO author = new AuthorDTO(null, firstName, lastName, nationality);
         String response = mockMvc.perform(post("/api/author")
@@ -34,12 +40,21 @@ class AuthorControllerIntegrationTest {
         return objectMapper.readValue(response, AuthorDTO.class);
     }
 
+    @BeforeEach
+    void cleanDatabase() {
+        jdbcTemplate.execute("DELETE FROM astronomical_observations");
+        jdbcTemplate.execute("DELETE FROM authors");
+    }
+
     @Test
     void testCreateAuthor() throws Exception {
-        AuthorDTO created = createTestAuthor("Carl", "Sagan", "American");
+        AuthorDTO author = new AuthorDTO(null, "Carl", "Sagan", "American");
 
-        mockMvc.perform(get("/api/author/" + created.getId()))
-                .andExpect(status().isOk())
+        mockMvc.perform(post("/api/author")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(author)))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.firstName").value("Carl"))
                 .andExpect(jsonPath("$.lastName").value("Sagan"))
                 .andExpect(jsonPath("$.nationality").value("American"));
