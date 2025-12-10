@@ -38,26 +38,27 @@ class ObservationControllerIntegrationTest {
     private JdbcTemplate jdbcTemplate;
 
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         objectMapper.registerModule(new JavaTimeModule());
-
-        jdbcTemplate.execute("""
-            ALTER TABLE astronomical_observations
-            ALTER COLUMN name TYPE TEXT USING name::text
-        """);
 
         jdbcTemplate.execute("DELETE FROM celestial_objects");
         jdbcTemplate.execute("DELETE FROM astronomical_observations");
         jdbcTemplate.execute("DELETE FROM authors");
 
-        jdbcTemplate.execute("INSERT INTO authors(id, first_name, last_name, nationality) VALUES (1, 'John', 'Doe', 'USA')");
+        AuthorDTO author = createTestAuthor("John", "Doe", "USA");
+        testAuthorId = author.getId();
+
+        jdbcTemplate.execute("""
+                    ALTER TABLE astronomical_observations
+                    ALTER COLUMN name TYPE TEXT USING name::text
+                """);
     }
 
     private AuthorDTO createTestAuthor(String firstName, String lastName, String nationality) throws Exception {
         AuthorDTO author = new AuthorDTO(null, firstName, lastName, nationality);
         String response = mockMvc.perform(post("/api/author")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(author)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
         return objectMapper.readValue(response, AuthorDTO.class);
@@ -72,8 +73,8 @@ class ObservationControllerIntegrationTest {
         observation.setCelestialObjects(Arrays.asList("Mars", "Jupiter"));
 
         String response = mockMvc.perform(post("/api/observation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(observation)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -99,8 +100,8 @@ class ObservationControllerIntegrationTest {
         observation.setAuthorId(99999L);
 
         mockMvc.perform(post("/api/observation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(observation)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isNotFound());
     }
 
@@ -111,8 +112,8 @@ class ObservationControllerIntegrationTest {
         created.setDescription("Updated description");
 
         mockMvc.perform(put("/api/observation/" + created.getId())
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(created)))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(created)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"))
                 .andExpect(jsonPath("$.description").value("Updated description"));
