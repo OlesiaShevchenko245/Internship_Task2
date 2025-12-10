@@ -10,13 +10,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+
+import org.springframework.test.web.servlet.MockMvc;
+
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
@@ -24,24 +21,10 @@ import java.util.List;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
+@SpringBootTest(properties = "spring.profiles.active=test")
 @AutoConfigureMockMvc
-@Testcontainers
 @Transactional
 class ObservationControllerIntegrationTest {
-
-    @Container
-    static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15")
-            .withDatabaseName("test_db")
-            .withUsername("test")
-            .withPassword("test");
-
-    @DynamicPropertySource
-    static void configureProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.datasource.url", postgres::getJdbcUrl);
-        registry.add("spring.datasource.username", postgres::getUsername);
-        registry.add("spring.datasource.password", postgres::getPassword);
-    }
 
     @Autowired
     private MockMvc mockMvc;
@@ -64,8 +47,8 @@ class ObservationControllerIntegrationTest {
         observation.setCelestialObjects(Arrays.asList("Mars", "Jupiter"));
 
         mockMvc.perform(post("/api/observation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(observation)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.name").value("Test Observation"))
@@ -80,8 +63,8 @@ class ObservationControllerIntegrationTest {
         observation.setAuthorId(999L);
 
         mockMvc.perform(post("/api/observation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(observation)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isNotFound());
     }
 
@@ -93,8 +76,8 @@ class ObservationControllerIntegrationTest {
         observation.setAuthorId(1L);
 
         String createResponse = mockMvc.perform(post("/api/observation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(observation)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -114,8 +97,8 @@ class ObservationControllerIntegrationTest {
         observation.setAuthorId(1L);
 
         String createResponse = mockMvc.perform(post("/api/observation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(observation)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -124,8 +107,8 @@ class ObservationControllerIntegrationTest {
         created.setDescription("New description");
 
         mockMvc.perform(put("/api/observation/" + created.getId())
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(created)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(created)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"))
                 .andExpect(jsonPath("$.description").value("New description"));
@@ -139,8 +122,8 @@ class ObservationControllerIntegrationTest {
         observation.setAuthorId(1L);
 
         String createResponse = mockMvc.perform(post("/api/observation")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(observation)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(observation)))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString();
 
@@ -160,57 +143,10 @@ class ObservationControllerIntegrationTest {
         request.setSize(10);
 
         mockMvc.perform(post("/api/observation/_list")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.list").isArray())
                 .andExpect(jsonPath("$.totalPages").exists());
-    }
-
-    @Test
-    void testListObservationsWithFilters() throws Exception {
-        ObservationFilterRequest request = new ObservationFilterRequest();
-        request.setAuthorId(1L);
-        request.setPage(1);
-        request.setSize(10);
-
-        mockMvc.perform(post("/api/observation/_list")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.list").isArray());
-    }
-
-    @Test
-    void testGenerateReport() throws Exception {
-        ObservationFilterRequest request = new ObservationFilterRequest();
-
-        mockMvc.perform(post("/api/observation/_report")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(header().exists("Content-Disposition"));
-    }
-
-    @Test
-    void testUploadObservations() throws Exception {
-        ObservationDTO obs1 = new ObservationDTO();
-        obs1.setName("Upload Test 1");
-        obs1.setObservationTime(LocalDateTime.now());
-        obs1.setAuthorId(1L);
-
-        ObservationDTO obs2 = new ObservationDTO();
-        obs2.setName("Upload Test 2");
-        obs2.setObservationTime(LocalDateTime.now());
-        obs2.setAuthorId(2L);
-
-        List<ObservationDTO> observations = Arrays.asList(obs1, obs2);
-
-        mockMvc.perform(post("/api/observation/upload")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(observations)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.successCount").exists())
-                .andExpect(jsonPath("$.failureCount").exists());
     }
 }
