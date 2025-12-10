@@ -28,8 +28,10 @@ cd Internship_Task2
 ```
 psql -U postgres 
 CREATE DATABASE cosmorum_db;
+
 # за необхідності:
 \c cosmorum_db;
+
 # або
 CREATE USER postgres WITH PASSWORD 'pass';
 GRANT ALL PRIVILEGES ON DATABASE cosmorum_db TO postgres;
