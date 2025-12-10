@@ -33,6 +33,9 @@ class ObservationControllerIntegrationTest {
 
     private Long testAuthorId;
 
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @BeforeEach
     void setup() {
         objectMapper.registerModule(new JavaTimeModule());
