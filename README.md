@@ -22,7 +22,7 @@ ___
 ### Клонування репозиторію (після завантаження даного рипозиторію (https://github.com/OlesiaShevchenko245/Internship_Task2))
 ```
 git clone <repository-url>
-cd cosmorum-service
+cd Internship_Task2
 ```
 ### Налаштування PostgreSQL (локально)
 А) Через Docker:
