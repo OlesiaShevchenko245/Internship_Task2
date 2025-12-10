@@ -34,6 +34,9 @@ GRANT ALL PRIVILEGES ON DATABASE cosmorum_db TO postgres;
 ```
 ### Запуск
 ```
+# компіляція
+./mvnw compile
+
 # з використанням Maven Wrapper 
 ./mvnw spring-boot:run
 
