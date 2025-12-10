@@ -25,17 +25,6 @@ git clone <repository-url>
 cd Internship_Task2
 ```
 ### Налаштування PostgreSQL (локально)
-А) Через Docker:
-```
-docker run --name cosmorum-postgres \
-  -e POSTGRES_DB=cosmorum_db \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_PASSWORD=pass \
-  -p 5432:5432 \
-  -d postgres:17
-
-```
-Б) Локально: 
 ```
 psql -U postgres # пароль: pass
 CREATE DATABASE cosmorum_db;
