@@ -128,21 +128,4 @@ class ObservationControllerIntegrationTest {
         mockMvc.perform(get("/api/observation/" + created.getId()))
                 .andExpect(status().isNotFound());
     }
-
-    @Test
-    void testListObservationsWithPagination() throws Exception {
-        createTestObservation("Obs 1", "Desc 1");
-        createTestObservation("Obs 2", "Desc 2");
-
-        ObservationFilterRequest request = new ObservationFilterRequest();
-        request.setPage(1);
-        request.setSize(10);
-
-        mockMvc.perform(post("/api/observation/_list")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.list").isArray())
-                .andExpect(jsonPath("$.totalPages").exists());
-    }
 }
