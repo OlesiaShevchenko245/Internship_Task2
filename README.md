@@ -26,8 +26,11 @@ cd Internship_Task2
 ```
 ### Налаштування PostgreSQL (локально)
 ```
-psql -U postgres # пароль: pass
+psql -U postgres 
 CREATE DATABASE cosmorum_db;
+# за необхідності:
+CREATE USER postgres WITH PASSWORD 'pass';
+GRANT ALL PRIVILEGES ON DATABASE cosmorum_db TO postgres;
 ```
 ### Запуск
 ```
