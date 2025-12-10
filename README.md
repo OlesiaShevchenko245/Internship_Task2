@@ -21,7 +21,7 @@ ___
 ## Запуск
 ### Клонування репозиторію (після завантаження даного рипозиторію (https://github.com/OlesiaShevchenko245/Internship_Task2))
 ```
-mvn clean package
+git clone <repository-url>
 cd cosmorum-service
 ```
 ### Налаштування PostgreSQL (локально)
