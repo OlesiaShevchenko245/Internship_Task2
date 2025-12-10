@@ -3,7 +3,6 @@ package com.cosmorum.controller;
 import com.cosmorum.dto.*;
 import com.cosmorum.service.ObservationService;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -16,10 +15,13 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/observation")
-@RequiredArgsConstructor
 public class ObservationController {
     
     private final ObservationService observationService;
+    
+    public ObservationController(ObservationService observationService) {
+        this.observationService = observationService;
+    }
     
     @PostMapping
     public ResponseEntity<ObservationDTO> create(@Valid @RequestBody ObservationDTO observationDTO) {

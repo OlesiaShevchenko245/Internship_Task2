@@ -16,10 +16,9 @@ public class Author {
     @Column(nullable = false)
     private String lastName;
     
-    @Column(nullable = false, unique = true)
+    @Column(nullable = false)  
     private String nationality;
     
-    // Constructors
     public Author() {}
     
     public Author(Long id, String firstName, String lastName, String nationality) {
@@ -29,7 +28,6 @@ public class Author {
         this.nationality = nationality;
     }
     
-    // Getters and Setters
     public Long getId() {
         return id;
     }

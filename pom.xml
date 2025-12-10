@@ -12,7 +12,7 @@
         <relativePath/>
     </parent>
     
-    <groupId>com.astronomy</groupId>
+    <groupId>com.cosmorum</groupId>
     <artifactId>astronomical-observations</artifactId>
     <version>1.0.0</version>
     <name>Astronomical Observations Service</name>
