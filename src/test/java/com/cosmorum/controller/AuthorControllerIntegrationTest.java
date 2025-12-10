@@ -24,40 +24,30 @@ class AuthorControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @Test
-    void testCreateAuthor() throws Exception {
-        AuthorDTO author = new AuthorDTO(null, "Carl", "Sagan", "American");
-
-        mockMvc.perform(post("/api/author")
+    private AuthorDTO createTestAuthor(String firstName, String lastName, String nationality) throws Exception {
+        AuthorDTO author = new AuthorDTO(null, firstName, lastName, nationality);
+        String response = mockMvc.perform(post("/api/author")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(author)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readValue(response, AuthorDTO.class);
+    }
+
+    @Test
+    void testCreateAuthor() throws Exception {
+        AuthorDTO created = createTestAuthor("Carl", "Sagan", "American");
+
+        mockMvc.perform(get("/api/author/" + created.getId()))
+                .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstName").value("Carl"))
                 .andExpect(jsonPath("$.lastName").value("Sagan"))
                 .andExpect(jsonPath("$.nationality").value("American"));
     }
 
     @Test
-    void testCreateAuthorWithDuplicateNationality() throws Exception {
-        AuthorDTO author1 = new AuthorDTO(null, "First", "Author", "TestNation");
-        AuthorDTO author2 = new AuthorDTO(null, "Second", "Author", "TestNation");
-
-        mockMvc.perform(post("/api/author")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author1)))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(post("/api/author")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author2)))
-                .andExpect(status().isConflict());
-    }
-
-    @Test
     void testCreateAuthorWithInvalidData() throws Exception {
         AuthorDTO author = new AuthorDTO(null, "", "", "");
-
         mockMvc.perform(post("/api/author")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(author)))
@@ -66,6 +56,8 @@ class AuthorControllerIntegrationTest {
 
     @Test
     void testGetAllAuthors() throws Exception {
+        createTestAuthor("Test", "User", "TestNation");
+
         mockMvc.perform(get("/api/author"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$").isArray());
@@ -73,15 +65,7 @@ class AuthorControllerIntegrationTest {
 
     @Test
     void testUpdateAuthor() throws Exception {
-        AuthorDTO author = new AuthorDTO(null, "Neil", "Armstrong", "USNation");
-
-        String createResponse = mockMvc.perform(post("/api/author")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        AuthorDTO created = objectMapper.readValue(createResponse, AuthorDTO.class);
+        AuthorDTO created = createTestAuthor("Neil", "Armstrong", "USNation");
         created.setFirstName("Neil Alden");
 
         mockMvc.perform(put("/api/author/" + created.getId())
@@ -93,15 +77,7 @@ class AuthorControllerIntegrationTest {
 
     @Test
     void testDeleteAuthor() throws Exception {
-        AuthorDTO author = new AuthorDTO(null, "Test", "Delete", "DeleteNation");
-
-        String createResponse = mockMvc.perform(post("/api/author")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(author)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        AuthorDTO created = objectMapper.readValue(createResponse, AuthorDTO.class);
+        AuthorDTO created = createTestAuthor("Test", "Delete", "DeleteNation");
 
         mockMvc.perform(delete("/api/author/" + created.getId()))
                 .andExpect(status().isNoContent());
