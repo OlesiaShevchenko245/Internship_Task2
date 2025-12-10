@@ -34,9 +34,19 @@ class ObservationControllerIntegrationTest {
     private Long testAuthorId;
 
     @BeforeEach
-    void setup() throws Exception {
+    void setup() {
         objectMapper.registerModule(new JavaTimeModule());
-        testAuthorId = createTestAuthor("Test", "Author", "TestNation").getId();
+
+        jdbcTemplate.execute("""
+            ALTER TABLE astronomical_observations
+            ALTER COLUMN name TYPE TEXT USING name::text
+        """);
+
+        jdbcTemplate.execute("DELETE FROM celestial_objects");
+        jdbcTemplate.execute("DELETE FROM astronomical_observations");
+        jdbcTemplate.execute("DELETE FROM authors");
+
+        jdbcTemplate.execute("INSERT INTO authors(id, first_name, last_name, nationality) VALUES (1, 'John', 'Doe', 'USA')");
     }
 
     private AuthorDTO createTestAuthor(String firstName, String lastName, String nationality) throws Exception {
