@@ -1,5 +1,6 @@
 package com.cosmorum.controller;
 
+import com.cosmorum.dto.AuthorDTO;
 import com.cosmorum.dto.ObservationDTO;
 import com.cosmorum.dto.ObservationFilterRequest;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,13 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.transaction.annotation.Transactional;
-
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -32,35 +31,58 @@ class ObservationControllerIntegrationTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    private Long testAuthorId;
+
     @BeforeEach
-    void setup() {
+    void setup() throws Exception {
         objectMapper.registerModule(new JavaTimeModule());
+        testAuthorId = createTestAuthor("Test", "Author", "TestNation").getId();
+    }
+
+    private AuthorDTO createTestAuthor(String firstName, String lastName, String nationality) throws Exception {
+        AuthorDTO author = new AuthorDTO(null, firstName, lastName, nationality);
+        String response = mockMvc.perform(post("/api/author")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(author)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+        return objectMapper.readValue(response, AuthorDTO.class);
+    }
+
+    private ObservationDTO createTestObservation(String name, String description) throws Exception {
+        ObservationDTO observation = new ObservationDTO();
+        observation.setName(name);
+        observation.setDescription(description);
+        observation.setObservationTime(LocalDateTime.of(2024, 1, 15, 20, 30));
+        observation.setAuthorId(testAuthorId);
+        observation.setCelestialObjects(Arrays.asList("Mars", "Jupiter"));
+
+        String response = mockMvc.perform(post("/api/observation")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(observation)))
+                .andExpect(status().isCreated())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, ObservationDTO.class);
     }
 
     @Test
     void testCreateObservation() throws Exception {
-        ObservationDTO observation = new ObservationDTO();
-        observation.setName("Test Observation");
-        observation.setDescription("Test description");
-        observation.setObservationTime(LocalDateTime.of(2024, 1, 15, 20, 30));
-        observation.setAuthorId(1L);
-        observation.setCelestialObjects(Arrays.asList("Mars", "Jupiter"));
+        ObservationDTO created = createTestObservation("Test Observation", "Test description");
 
-        mockMvc.perform(post("/api/observation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(observation)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
+        mockMvc.perform(get("/api/observation/" + created.getId()))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(created.getId()))
                 .andExpect(jsonPath("$.name").value("Test Observation"))
-                .andExpect(jsonPath("$.author.id").value(1));
+                .andExpect(jsonPath("$.author.id").value(testAuthorId.intValue()));
     }
 
     @Test
     void testCreateObservationWithInvalidAuthor() throws Exception {
         ObservationDTO observation = new ObservationDTO();
-        observation.setName("Test Observation");
+        observation.setName("Invalid Author Test");
         observation.setObservationTime(LocalDateTime.now());
-        observation.setAuthorId(999L);
+        observation.setAuthorId(99999L);
 
         mockMvc.perform(post("/api/observation")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -69,65 +91,22 @@ class ObservationControllerIntegrationTest {
     }
 
     @Test
-    void testGetObservationById() throws Exception {
-        ObservationDTO observation = new ObservationDTO();
-        observation.setName("Get Test");
-        observation.setObservationTime(LocalDateTime.now());
-        observation.setAuthorId(1L);
-
-        String createResponse = mockMvc.perform(post("/api/observation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(observation)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        ObservationDTO created = objectMapper.readValue(createResponse, ObservationDTO.class);
-
-        mockMvc.perform(get("/api/observation/" + created.getId()))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.id").value(created.getId()))
-                .andExpect(jsonPath("$.author").exists());
-    }
-
-    @Test
     void testUpdateObservation() throws Exception {
-        ObservationDTO observation = new ObservationDTO();
-        observation.setName("Original Name");
-        observation.setObservationTime(LocalDateTime.now());
-        observation.setAuthorId(1L);
-
-        String createResponse = mockMvc.perform(post("/api/observation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(observation)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        ObservationDTO created = objectMapper.readValue(createResponse, ObservationDTO.class);
+        ObservationDTO created = createTestObservation("Original Name", "Original description");
         created.setName("Updated Name");
-        created.setDescription("New description");
+        created.setDescription("Updated description");
 
         mockMvc.perform(put("/api/observation/" + created.getId())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(created)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Updated Name"))
-                .andExpect(jsonPath("$.description").value("New description"));
+                .andExpect(jsonPath("$.description").value("Updated description"));
     }
 
     @Test
     void testDeleteObservation() throws Exception {
-        ObservationDTO observation = new ObservationDTO();
-        observation.setName("Delete Test");
-        observation.setObservationTime(LocalDateTime.now());
-        observation.setAuthorId(1L);
-
-        String createResponse = mockMvc.perform(post("/api/observation")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(observation)))
-                .andExpect(status().isCreated())
-                .andReturn().getResponse().getContentAsString();
-
-        ObservationDTO created = objectMapper.readValue(createResponse, ObservationDTO.class);
+        ObservationDTO created = createTestObservation("Delete Test", "Delete description");
 
         mockMvc.perform(delete("/api/observation/" + created.getId()))
                 .andExpect(status().isNoContent());
@@ -138,6 +117,9 @@ class ObservationControllerIntegrationTest {
 
     @Test
     void testListObservationsWithPagination() throws Exception {
+        createTestObservation("Obs 1", "Desc 1");
+        createTestObservation("Obs 2", "Desc 2");
+
         ObservationFilterRequest request = new ObservationFilterRequest();
         request.setPage(1);
         request.setSize(10);
