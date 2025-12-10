@@ -37,6 +37,7 @@ docker run --name cosmorum-postgres \
 ```
 Б) Локально: 
 ```
+psql -U postgres # пароль: pass
 CREATE DATABASE cosmorum_db;
 ```
 ### Запуск
